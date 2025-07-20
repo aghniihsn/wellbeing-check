@@ -91,12 +91,14 @@ export default function DashboardPage() {
     }
   }
 
-  // ...existing code...
-
   // Calculate stats
   const teamMemberCount = Array.isArray(members) ? members.length : 0
   const activeProjectCount = Array.isArray(projects) ? projects.length : 0
-  const recentCheckins = Array.isArray(checkins) ? checkins.slice(0, 5) : []
+  const recentCheckins = Array.isArray(checkins)
+    ? [...checkins]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 5)
+    : [];
   // Example: calculate check-in rate (dummy logic, adjust as needed)
   const checkinRate = teamMemberCount && Array.isArray(checkins) ? Math.round((checkins.length / (teamMemberCount * 30)) * 100) : 0
 
@@ -202,11 +204,11 @@ export default function DashboardPage() {
                       ))}
                     </div>
                   </CardContent>
-                  <CardFooter>
+                  {/* <CardFooter>
                     <Button variant="outline" className="w-full" asChild>
                       <Link href="/dashboard/checkin">View all check-ins</Link>
                     </Button>
-                  </CardFooter>
+                  </CardFooter> */}
                 </Card>
                 <Card>
                   <CardHeader>
@@ -214,26 +216,54 @@ export default function DashboardPage() {
                     <CardDescription>Recommended wellbeing tips for your team</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      <div className="rounded-lg border p-3">
-                        <h3 className="font-medium">Take regular breaks</h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Encourage team members to take short breaks every hour to reduce eye strain and mental fatigue.
-                        </p>
-                      </div>
-                      <div className="rounded-lg border p-3">
-                        <h3 className="font-medium">Team check-in meeting</h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Schedule a 15-minute team check-in to discuss progress and address any blockers.
-                        </p>
-                      </div>
-                      <div className="rounded-lg border p-3">
-                        <h3 className="font-medium">Mindfulness session</h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Consider a short guided meditation session to help reduce team stress levels.
-                        </p>
-                      </div>
-                    </div>
+                    {(() => {
+                      // Ambil 10 checkin terbaru
+                      const latestCheckins = Array.isArray(checkins)
+                        ? [...checkins]
+                            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                            .slice(0, 10)
+                        : [];
+                      // Hitung mood terbanyak
+                      const moodCount: Record<string, number> = {};
+                      latestCheckins.forEach(c => {
+                        if (c.mood) {
+                          const mood = c.mood.toLowerCase();
+                          moodCount[mood] = (moodCount[mood] || 0) + 1;
+                        }
+                      });
+                      const mostMood = Object.entries(moodCount).sort((a, b) => b[1] - a[1])[0]?.[0] || "unknown";
+                      // Tips mapping
+                      const comfortTips: Record<string, {title: string, desc: string}[]> = {
+                        happy: [
+                          {title: "Pertahankan mood positif", desc: "Bagikan semangat positif ke tim dan rayakan pencapaian kecil bersama."},
+                          {title: "Apresiasi anggota tim", desc: "Berikan pujian atau ucapan terima kasih ke rekan kerja."}
+                        ],
+                        neutral: [
+                          {title: "Aktivitas ringan bersama", desc: "Ajak tim untuk melakukan ice breaking atau sharing ringan."},
+                          {title: "Cek kebutuhan tim", desc: "Pastikan semua anggota merasa didengar dan terfasilitasi."}
+                        ],
+                        stressed: [
+                          {title: "Mindfulness break", desc: "Ajak tim untuk istirahat sejenak dan lakukan relaksasi sederhana."},
+                          {title: "Diskusi terbuka", desc: "Buka ruang diskusi untuk membahas tantangan yang dihadapi tim."}
+                        ],
+                        unknown: [
+                          {title: "Jaga komunikasi", desc: "Pastikan komunikasi tim tetap lancar dan terbuka."},
+                          {title: "Cek wellbeing tim", desc: "Tanyakan kabar anggota tim secara personal."}
+                        ]
+                      };
+                      const tips = comfortTips[mostMood] || comfortTips["unknown"];
+                      return (
+                        <div className="space-y-4">
+                          <div className="mb-2 text-sm text-muted-foreground">Mood tim hari ini: <span className="font-semibold capitalize">{mostMood}</span></div>
+                          {tips.map((tip, idx) => (
+                            <div key={idx} className="rounded-lg border p-3">
+                              <h3 className="font-medium">{tip.title}</h3>
+                              <p className="text-sm text-muted-foreground mt-1">{tip.desc}</p>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </CardContent>
                   <CardFooter>
                     <Button variant="outline" className="w-full" asChild>

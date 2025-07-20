@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   BookOpen,
   Calendar,
@@ -20,6 +20,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
+import { api } from "@/lib/api"
 
 // Sample tips data
 const tips = [
@@ -99,11 +100,71 @@ const tips = [
   },
 ]
 
+// Comfort tips mapping by mood
+const comfortTips: Record<string, string[]> = {
+  happy: [
+    "Bagus sekali! Pertahankan mood positifmu hari ini.",
+    "Coba berbagi kebahagiaan dengan orang lain di sekitarmu.",
+    "Luangkan waktu untuk bersyukur dan menikmati momen kecil.",
+  ],
+  sad: [
+    "Tidak apa-apa merasa sedih, cobalah istirahat sejenak.",
+    "Bicaralah dengan teman atau keluarga jika butuh dukungan.",
+    "Luangkan waktu untuk melakukan hal yang kamu sukai.",
+  ],
+  neutral: [
+    "Hari yang tenang, coba lakukan aktivitas ringan untuk menyegarkan diri.",
+    "Jaga energi dan tetap terhubung dengan orang di sekitarmu.",
+    "Luangkan waktu untuk refleksi dan relaksasi.",
+  ],
+  angry: [
+    "Tarik napas dalam-dalam dan coba tenangkan pikiran.",
+    "Jangan ragu untuk mengambil jeda sebelum melanjutkan aktivitas.",
+    "Coba tuliskan perasaanmu atau lakukan aktivitas fisik ringan.",
+  ],
+  surprised: [
+    "Hal baru bisa jadi menyenangkan! Tetap terbuka pada pengalaman baru.",
+    "Coba bagikan cerita menarikmu hari ini.",
+    "Jaga semangat dan tetap positif.",
+  ],
+  disgusted: [
+    "Coba alihkan perhatian ke hal yang kamu sukai.",
+    "Luangkan waktu untuk relaksasi dan self-care.",
+    "Jangan biarkan perasaan negatif menguasai harimu.",
+  ],
+  fearful: [
+    "Coba lakukan teknik relaksasi seperti pernapasan dalam.",
+    "Bicaralah dengan seseorang yang kamu percaya.",
+    "Ingat, kamu tidak sendiri.",
+  ],
+  unknown: [
+    "Jaga kesehatan dan semangatmu hari ini!",
+    "Luangkan waktu untuk diri sendiri dan lakukan hal yang menyenangkan.",
+  ],
+};
 export default function TipsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("all")
   const [likedTips, setLikedTips] = useState<number[]>(tips.filter((tip) => tip.isLiked).map((tip) => tip.id))
   const { toast } = useToast()
+  const [userMood, setUserMood] = useState<string>("")
+  const [loadingMood, setLoadingMood] = useState(true)
+
+  useEffect(() => {
+    const fetchCheckin = async () => {
+      setLoadingMood(true)
+      try {
+        const data = await api.checkins.getToday()
+        const checkin = (data || []).find((c: any) => c.type === "checkin")
+        setUserMood(checkin?.mood || "unknown")
+      } catch {
+        setUserMood("unknown")
+      } finally {
+        setLoadingMood(false)
+      }
+    }
+    fetchCheckin()
+  }, [])
 
   const filteredTips = tips.filter((tip) => {
     const matchesSearch =
@@ -169,6 +230,21 @@ export default function TipsPage() {
           <p className="text-muted-foreground">Recommendations to improve team wellbeing and productivity</p>
         </div>
       </div>
+
+      {/* Comfort tips sesuai mood user */}
+      {!loadingMood && userMood && (
+        <div className="mb-6 p-4 rounded-lg border bg-green-50">
+          <h3 className="font-semibold text-green-700 mb-2">
+            Comfort Tips untuk Mood:{" "}
+            <span className="capitalize">{userMood}</span>
+          </h3>
+          <ul className="list-disc ml-6 text-green-800">
+            {(comfortTips[userMood] || comfortTips["unknown"]).map((tip, idx) => (
+              <li key={idx}>{tip}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsContent value="all" className="space-y-4">
