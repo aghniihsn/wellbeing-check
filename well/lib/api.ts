@@ -57,7 +57,6 @@ export const api = {
       method: 'POST',
       data,
     }),
-    logout: () => fetcher('/auth/logout', { method: 'POST' }),
   },
 
   // Check-in endpoints

@@ -1,18 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Link from "next/link"
 import {
-  ChevronDown,
   Edit,
   MoreHorizontal,
   Plus,
-  Search,
   Trash,
-  Users,
   Calendar,
 } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -33,14 +28,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import { api } from "@/lib/api"
 
 export default function ProjectsPage() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [activeTab, setActiveTab] = useState("all")
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [newProjectName, setNewProjectName] = useState("")
   const [newProjectDescription, setNewProjectDescription] = useState("")
@@ -70,18 +61,7 @@ export default function ProjectsPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const filteredProjects = (projects || []).filter((project) => {
-    const matchesSearch =
-      project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (project.description || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (project.teamName || project.team || "").toLowerCase().includes(searchQuery.toLowerCase())
-
-    if (activeTab === "all") return matchesSearch
-    if (activeTab === "active") return matchesSearch && project.status === "in-progress"
-    if (activeTab === "completed") return matchesSearch && project.status === "completed"
-
-    return matchesSearch
-  })
+  const filteredProjects = (projects || [])
 
   const handleCreateProject = async () => {
     if (!newProjectName.trim()) {
@@ -263,195 +243,87 @@ export default function ProjectsPage() {
         </Dialog>
       </div>
 
-      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <div className="flex items-center justify-between">
-          <TabsList>
-            <TabsTrigger value="all">All Projects</TabsTrigger>
-            <TabsTrigger value="active">Active</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-          </TabsList>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search projects..."
-                className="pl-8 w-[200px] md:w-[300px]"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  Sort
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>Name (A-Z)</DropdownMenuItem>
-                <DropdownMenuItem>Name (Z-A)</DropdownMenuItem>
-                <DropdownMenuItem>Due Date (Earliest)</DropdownMenuItem>
-                <DropdownMenuItem>Due Date (Latest)</DropdownMenuItem>
-                <DropdownMenuItem>Progress (Highest)</DropdownMenuItem>
-                <DropdownMenuItem>Progress (Lowest)</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+      <div className="space-y-4">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredProjects.map((project) => {
+            const assignedTeams = Array.isArray(project.teams) ? project.teams : [];
+            return (
+              <Card key={project.id}>
+                <CardHeader className="pb-3">
+                  <div className="space-y-1">
+                    <CardTitle>{project.name}</CardTitle>
+                    <CardDescription>{project.description}</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent className="pb-3">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex flex-col">
+                      <span className="text-muted-foreground">Start Date</span>
+                      <span className="font-medium">{project.startDate ? new Date(project.startDate).toLocaleDateString() : '-'}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-muted-foreground">End Date</span>
+                      <span className="font-medium">{project.endDate ? new Date(project.endDate).toLocaleDateString() : '-'}</span>
+                    </div>
+                    <div className="flex flex-col col-span-2">
+                      <span className="text-muted-foreground">Assigned Teams</span>
+                      <span className="font-medium">
+                        {assignedTeams.length === 0 ? '-' : assignedTeams.map((teamId: any, idx: number) => {
+                          let teamKey: string = "";
+                          if (typeof teamId === 'object' && teamId !== null) {
+                            teamKey = (teamId as any)._id || (teamId as any).id || "";
+                          } else if (typeof teamId === 'string') {
+                            teamKey = teamId;
+                          }
+                          const team = teams.find((t: any) => (t.id || t._id) === teamKey);
+                          return team ? (
+                            <span key={teamKey}>
+                              {team.name}{idx < assignedTeams.length - 1 ? ', ' : ''}
+                            </span>
+                          ) : null;
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Menu</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => openEditDialog(project)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit Project
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteProject(project.id || project._id)}>
+                        <Trash className="mr-2 h-4 w-4" />
+                        Delete Project
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </CardFooter>
+              </Card>
+            );
+          })}
         </div>
 
-        <TabsContent value="all" className="space-y-4">
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredProjects.map((project) => {
-              const assignedTeams = Array.isArray(project.teams) ? project.teams : [];
-              return (
-                <Card key={project.id}>
-                  <CardHeader className="pb-3">
-                    <div className="space-y-1">
-                      <CardTitle>{project.name}</CardTitle>
-                      <CardDescription>{project.description}</CardDescription>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pb-3">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div className="flex flex-col">
-                        <span className="text-muted-foreground">Start Date</span>
-                        <span className="font-medium">{project.startDate ? new Date(project.startDate).toLocaleDateString() : '-'}</span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-muted-foreground">End Date</span>
-                        <span className="font-medium">{project.endDate ? new Date(project.endDate).toLocaleDateString() : '-'}</span>
-                      </div>
-                      <div className="flex flex-col col-span-2">
-                        <span className="text-muted-foreground">Assigned Teams</span>
-                        <span className="font-medium">
-                          {assignedTeams.length === 0 ? '-' : assignedTeams.map((teamId: any, idx: number) => {
-                            let teamKey: string = "";
-                            if (typeof teamId === 'object' && teamId !== null) {
-                              teamKey = (teamId as any)._id || (teamId as any).id || "";
-                            } else if (typeof teamId === 'string') {
-                              teamKey = teamId;
-                            }
-                            const team = teams.find((t: any) => (t.id || t._id) === teamKey);
-                            return team ? (
-                              <span key={teamKey}>
-                                {team.name}{idx < assignedTeams.length - 1 ? ', ' : ''}
-                              </span>
-                            ) : null;
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button variant="outline" className="w-full" asChild>
-                      <Link href={`/dashboard/projects/${project.id}`}>View Project</Link>
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEditDialog(project)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit Project
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteProject(project.id || project._id)}>
-                          <Trash className="mr-2 h-4 w-4" />
-                          Delete Project
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </CardFooter>
-                </Card>
-              );
-            })}
-          </div>
-
-          {filteredProjects.length === 0 && (
-            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-                <Calendar className="h-10 w-10 text-muted-foreground" />
-              </div>
-              <h3 className="mt-4 text-lg font-semibold">No projects found</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                We couldn&apos;t find any projects matching your search.
-              </p>
-              <Button className="mt-4" onClick={() => setSearchQuery("")}>
-                Clear Search
-              </Button>
+        {filteredProjects.length === 0 && (
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
+              <Calendar className="h-10 w-10 text-muted-foreground" />
             </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="active" className="space-y-4">
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredProjects.map((project) => (
-              <Card key={project.id}>
-                <CardHeader className="pb-3">
-                  <div className="space-y-1">
-                    <CardTitle>{project.name}</CardTitle>
-                    <CardDescription>{project.description}</CardDescription>
-                  </div>
-                </CardHeader>
-                <CardContent className="pb-3">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="flex flex-col">
-                      <span className="text-muted-foreground">Start Date</span>
-                      <span className="font-medium">{project.startDate ? new Date(project.startDate).toLocaleDateString() : '-'}</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-muted-foreground">End Date</span>
-                      <span className="font-medium">{project.endDate ? new Date(project.endDate).toLocaleDateString() : '-'}</span>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button variant="outline" className="w-full" asChild>
-                    <Link href={`/dashboard/projects/${project.id}`}>View Project</Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+            <h3 className="mt-4 text-lg font-semibold">No projects found</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              No projects available at the moment.
+            </p>
           </div>
-        </TabsContent>
-
-        <TabsContent value="completed" className="space-y-4">
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredProjects.map((project) => (
-              <Card key={project.id}>
-                <CardHeader className="pb-3">
-                  <div className="space-y-1">
-                    <CardTitle>{project.name}</CardTitle>
-                    <CardDescription>{project.description}</CardDescription>
-                  </div>
-                </CardHeader>
-                <CardContent className="pb-3">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="flex flex-col">
-                      <span className="text-muted-foreground">Start Date</span>
-                      <span className="font-medium">{project.startDate ? new Date(project.startDate).toLocaleDateString() : '-'}</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-muted-foreground">End Date</span>
-                      <span className="font-medium">{project.endDate ? new Date(project.endDate).toLocaleDateString() : '-'}</span>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button variant="outline" className="w-full" asChild>
-                    <Link href={`/dashboard/projects/${project.id}`}>View Project</Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>

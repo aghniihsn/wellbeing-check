@@ -7,7 +7,6 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
   BarChart3,
-  Bell,
   Calendar,
   CheckCircle,
   ChevronDown,
@@ -256,34 +255,6 @@ export default function DashboardLayout({
             <Menu className="h-5 w-5" />
           </Button>
           <div className="ml-auto flex items-center gap-4">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Bell className="h-5 w-5" />
-                  <span className="sr-only">Notifications</span>
-                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
-                    3
-                  </span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80">
-                <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <div className="max-h-96 overflow-auto">
-                  {[1, 2, 3].map((i) => (
-                    <DropdownMenuItem key={i} className="cursor-pointer p-4">
-                      <div className="grid gap-1">
-                        <div className="font-medium">Check-in Reminder</div>
-                        <div className="text-sm text-muted-foreground">
-                          Don&apos;t forget to complete your morning check-in today.
-                        </div>
-                        <div className="text-xs text-muted-foreground">2 minutes ago</div>
-                      </div>
-                    </DropdownMenuItem>
-                  ))}
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
             <Sheet>
               <SheetTrigger asChild>
                 <div className="flex items-center gap-2 md:hidden">
@@ -306,23 +277,6 @@ export default function DashboardLayout({
                     </div>
                   </div>
                   <div className="grid gap-2 px-2">
-                    <Link
-                      href="/dashboard/profile"
-                      className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
-                    >
-                      <Avatar className="h-5 w-5">
-                        <AvatarImage src="/placeholder.svg?height=20&width=20" alt="User" />
-                        <AvatarFallback>AD</AvatarFallback>
-                      </Avatar>
-                      Profile
-                    </Link>
-                    <Link
-                      href="/dashboard/settings"
-                      className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
-                    >
-                      <Settings className="h-5 w-5" />
-                      Settings
-                    </Link>
                     <button
                       onClick={() => logout()}
                       className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted text-left"
@@ -347,13 +301,6 @@ export default function DashboardLayout({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/profile">Profile</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/settings">Settings</Link>
-                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => logout()}>
                   Logout

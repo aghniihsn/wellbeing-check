@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { ChevronDown, Edit, MoreHorizontal, Plus, Search, Trash, Users } from "lucide-react"
+import { Edit, MoreHorizontal, Plus, Trash, Users } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -34,7 +34,6 @@ export default function TeamsPage() {
   const [teams, setTeams] = useState<any[]>([])
   const [projects, setProjects] = useState<any[]>([])
   const [users, setUsers] = useState<any[]>([])
-  const [searchQuery, setSearchQuery] = useState("")
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [newTeamName, setNewTeamName] = useState("")
   const [newTeamDescription, setNewTeamDescription] = useState("")
@@ -56,12 +55,6 @@ export default function TeamsPage() {
       .catch(() => toast({ title: "Failed to load data", variant: "destructive" }))
       .finally(() => setLoading(false))
   }, [])
-
-  const filteredTeams = teams.filter(
-    (team) =>
-      team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      team.description.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
 
   const handleCreateTeam = async () => {
     if (!newTeamName.trim()) {
@@ -245,37 +238,8 @@ export default function TeamsPage() {
         </Dialog>
       </div>
 
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search teams..."
-            className="pl-8"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              Filter
-              <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem>All Teams</DropdownMenuItem>
-            <DropdownMenuItem>My Teams</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Sort by Name</DropdownMenuItem>
-            <DropdownMenuItem>Sort by Members</DropdownMenuItem>
-            <DropdownMenuItem>Sort by Projects</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredTeams.map((team) => {
+        {teams.map((team) => {
           const leadId = typeof team.lead === 'object' && team.lead !== null ? team.lead._id || team.lead.id : team.lead;
           const leadUser = users.find((u: any) => (u.id || u._id) === leadId);
           return (
@@ -343,26 +307,23 @@ export default function TeamsPage() {
                   </div>
                 </div>
               </CardContent>
-              <CardFooter>
+              {/* <CardFooter>
                 <Button variant="outline" className="w-full" asChild>
                   <Link href={`/dashboard/teams/${team.id}`}>View Team</Link>
                 </Button>
-              </CardFooter>
+              </CardFooter> */}
             </Card>
           );
         })}
       </div>
 
-      {filteredTeams.length === 0 && (
+      {teams.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
             <Users className="h-10 w-10 text-muted-foreground" />
           </div>
           <h3 className="mt-4 text-lg font-semibold">No teams found</h3>
-          <p className="mt-2 text-sm text-muted-foreground">We couldn&apos;t find any teams matching your search.</p>
-          <Button className="mt-4" onClick={() => setSearchQuery("")}>
-            Clear Search
-          </Button>
+          <p className="mt-2 text-sm text-muted-foreground">No teams available at the moment.</p>
         </div>
       )}
 
